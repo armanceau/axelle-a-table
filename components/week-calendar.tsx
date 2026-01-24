@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { DayColumn } from "./day-column"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
+import { useState, useEffect, useMemo } from "react";
+import { DayColumn } from "./day-column";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { useMeals } from "@/hooks/useMeals";
 
 const DAYS = [
   { name: "Lundi", short: "Lun" },
@@ -13,141 +14,148 @@ const DAYS = [
   { name: "Vendredi", short: "Ven" },
   { name: "Samedi", short: "Sam" },
   { name: "Dimanche", short: "Dim" },
-]
+];
 
-type WeekMeals = {
-  [key: string]: {
-    midi: string | null
-    soir: string | null
-  }
-}
-
-function getWeekKey(weekOffset: number): string {
-  const now = new Date()
-  now.setDate(now.getDate() + weekOffset * 7)
-  const year = now.getFullYear()
-  const weekNumber = getWeekNumber(now)
-  return `week-${year}-${weekNumber}`
-}
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+function getTodayIndex(): number {
+  const day = new Date().getDay();
+  return day === 0 ? 6 : day - 1;
 }
 
 function getWeekDates(weekOffset: number): Date[] {
-  const now = new Date()
-  const currentDay = now.getDay()
-  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay
-  
-  const monday = new Date(now)
-  monday.setDate(now.getDate() + mondayOffset + weekOffset * 7)
-  
-  const dates: Date[] = []
+  const now = new Date();
+  const currentDay = now.getDay();
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset + weekOffset * 7);
+
+  const dates: Date[] = [];
   for (let i = 0; i < 7; i++) {
-    const date = new Date(monday)
-    date.setDate(monday.getDate() + i)
-    dates.push(date)
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    dates.push(date);
   }
-  return dates
+  return dates;
 }
 
 function formatDateRange(dates: Date[]): string {
-  const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }
-  const start = dates[0].toLocaleDateString("fr-FR", options)
-  const end = dates[6].toLocaleDateString("fr-FR", options)
-  return `${start} - ${end}`
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+  };
+  const start = dates[0].toLocaleDateString("fr-FR", options);
+  const end = dates[6].toLocaleDateString("fr-FR", options);
+  return `${start} - ${end}`;
 }
 
-function getTodayIndex(): number {
-  const day = new Date().getDay()
-  return day === 0 ? 6 : day - 1
+interface WeekCalendarProps {
+  groupId: string;
 }
 
-const STORAGE_KEY = "meal-planner-data"
+export function WeekCalendar({ groupId }: WeekCalendarProps) {
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
-function loadMealsFromStorage(): { [weekKey: string]: WeekMeals } {
-  if (typeof window === "undefined") return {}
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    return saved ? JSON.parse(saved) : {}
-  } catch {
-    return {}
-  }
-}
+  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+  const weekStart = useMemo(() => weekDates[0], [weekDates]);
+  const todayIndex = weekOffset === 0 ? getTodayIndex() : -1;
 
-function saveMealsToStorage(data: { [weekKey: string]: WeekMeals }) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-}
-
-function createEmptyWeek(): WeekMeals {
-  return DAYS.reduce((acc, day) => {
-    acc[day.name] = { midi: null, soir: null }
-    return acc
-  }, {} as WeekMeals)
-}
-
-export function WeekCalendar() {
-  const [weekOffset, setWeekOffset] = useState(0)
-  const [allMeals, setAllMeals] = useState<{ [weekKey: string]: WeekMeals }>({})
-  const [mounted, setMounted] = useState(false)
-
-  const weekKey = getWeekKey(weekOffset)
-  const weekDates = getWeekDates(weekOffset)
-  const todayIndex = weekOffset === 0 ? getTodayIndex() : -1
+  const { meals, loading, createMeal, updateMeal, deleteMeal } = useMeals(
+    groupId,
+    weekStart,
+  );
 
   useEffect(() => {
-    setAllMeals(loadMealsFromStorage())
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      saveMealsToStorage(allMeals)
-    }
-  }, [allMeals, mounted])
+  const mealsByDay = DAYS.reduce(
+    (acc, day, dayIndex) => {
+      const date = new Date(weekDates[dayIndex]);
+      const dateStr = date.toISOString().split("T")[0];
 
-  const currentWeekMeals = allMeals[weekKey] || createEmptyWeek()
+      const dayMeals = meals.filter((m) => m.date === dateStr);
 
-  const handleUpdateMeal = (dayName: string, mealType: "midi" | "soir", recipe: string | null) => {
-    setAllMeals((prev) => ({
-      ...prev,
-      [weekKey]: {
-        ...createEmptyWeek(),
-        ...prev[weekKey],
-        [dayName]: {
-          ...(prev[weekKey]?.[dayName] || { midi: null, soir: null }),
-          [mealType]: recipe,
+      acc[day.name] = {
+        midi: dayMeals.find((m) => m.meal_type === "lunch")?.title || null,
+        soir: dayMeals.find((m) => m.meal_type === "dinner")?.title || null,
+        mealIds: {
+          midi: dayMeals.find((m) => m.meal_type === "lunch")?.id,
+          soir: dayMeals.find((m) => m.meal_type === "dinner")?.id,
         },
-      },
-    }))
-  }
+      };
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        midi: string | null;
+        soir: string | null;
+        mealIds: Record<string, string | undefined>;
+      }
+    >,
+  );
 
-  const handleReset = () => {
-    setAllMeals((prev) => ({
-      ...prev,
-      [weekKey]: createEmptyWeek(),
-    }))
-  }
+  const handleUpdateMeal = async (
+    dayName: string,
+    mealType: "midi" | "soir",
+    recipe: string | null,
+  ) => {
+    const dayIndex = DAYS.findIndex((d) => d.name === dayName);
+    const date = new Date(weekDates[dayIndex]);
+    const dateStr = date.toISOString().split("T")[0];
 
-  const totalMeals = Object.values(currentWeekMeals).reduce((count, meals) => {
-    return count + (meals.midi ? 1 : 0) + (meals.soir ? 1 : 0)
-  }, 0)
+    const mealTypeMap = { midi: "lunch", soir: "dinner" } as const;
 
-  if (!mounted) {
+    if (recipe === null) {
+      const mealId = mealsByDay[dayName].mealIds[mealType];
+      if (mealId) {
+        await deleteMeal(mealId);
+      }
+    } else {
+      const mealId = mealsByDay[dayName].mealIds[mealType];
+      if (mealId) {
+        await updateMeal(mealId, { title: recipe });
+      } else {
+        await createMeal({
+          group_id: groupId,
+          title: recipe,
+          meal_type: mealTypeMap[mealType],
+          date: dateStr,
+        });
+      }
+    }
+  };
+
+  const handleReset = async () => {
+    const weekMeals = meals.filter((m) => {
+      const mealDate = new Date(m.date);
+      const weekStartDate = new Date(weekDates[0]);
+      const weekEndDate = new Date(weekDates[6]);
+      weekEndDate.setHours(23, 59, 59, 999);
+      return mealDate >= weekStartDate && mealDate <= weekEndDate;
+    });
+    for (const m of weekMeals) {
+      await deleteMeal(m.id);
+    }
+  };
+
+  const totalMeals = Object.values(mealsByDay).reduce((count, meals) => {
+    return count + (meals.midi ? 1 : 0) + (meals.soir ? 1 : 0);
+  }, 0);
+
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Chargement...</div>
+        <div className="animate-pulse text-muted-foreground">
+          Chargement du calendrier...
+        </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <header className="mb-8">
@@ -177,10 +185,16 @@ export function WeekCalendar() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-foreground">
-              {weekOffset === 0 ? "Cette semaine" : weekOffset === 1 ? "Semaine prochaine" : weekOffset === -1 ? "Semaine dernière" : `Semaine ${weekOffset > 0 ? "+" : ""}${weekOffset}`}
+              {weekOffset === 0
+                ? "Cette semaine"
+                : weekOffset === 1
+                  ? "Semaine prochaine"
+                  : weekOffset === -1
+                    ? "Semaine dernière"
+                    : `Semaine ${weekOffset > 0 ? "+" : ""}${weekOffset}`}
             </span>
             <span className="text-sm text-muted-foreground">
               {formatDateRange(weekDates)}
@@ -211,7 +225,12 @@ export function WeekCalendar() {
         {/* Reset button */}
         {totalMeals > 0 && (
           <div className="flex justify-end mb-4">
-            <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-muted-foreground hover:text-destructive"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Réinitialiser la semaine
             </Button>
@@ -225,8 +244,10 @@ export function WeekCalendar() {
               key={day.name}
               day={day.name}
               shortDay={day.short}
-              meals={currentWeekMeals[day.name] || { midi: null, soir: null }}
-              onUpdateMeal={(mealType, recipe) => handleUpdateMeal(day.name, mealType, recipe)}
+              meals={mealsByDay[day.name] || { midi: null, soir: null }}
+              onUpdateMeal={(mealType, recipe) =>
+                handleUpdateMeal(day.name, mealType, recipe)
+              }
               isToday={index === todayIndex}
             />
           ))}
@@ -238,5 +259,5 @@ export function WeekCalendar() {
         </footer>
       </div>
     </div>
-  )
+  );
 }
