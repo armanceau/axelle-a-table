@@ -79,7 +79,7 @@ export const groups = {
   async addMember(groupId: string, userId: string) {
     const { data: group, error: getError } = await supabase
       .from("groups")
-      .select("member_ids, admin_ids")
+      .select("member_ids")
       .eq("id", groupId)
       .single();
 
@@ -98,21 +98,17 @@ export const groups = {
   async removeMember(groupId: string, userId: string) {
     const { data: group, error: getError } = await supabase
       .from("groups")
-      .select("member_ids, admin_ids")
+      .select("member_ids")
       .eq("id", groupId)
       .single();
 
     if (getError || !group) return { error: getError };
 
     const updatedMemberIds = group.member_ids.filter((id) => id !== userId);
-    const updatedAdminIds = group.admin_ids.filter((id) => id !== userId);
 
     const { error } = await supabase
       .from("groups")
-      .update({
-        member_ids: updatedMemberIds,
-        admin_ids: updatedAdminIds,
-      })
+      .update({ member_ids: updatedMemberIds })
       .eq("id", groupId);
 
     return { error };

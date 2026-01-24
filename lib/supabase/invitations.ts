@@ -81,6 +81,7 @@ export const invitations = {
         "accept_group_invitation",
         {
           invitation_id: invitationId,
+          user_id: user.id,
         },
       );
 
