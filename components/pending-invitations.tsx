@@ -16,6 +16,7 @@ interface Invitation {
 export function PendingInvitations() {
   const [invites, setInvites] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejecting, setRejecting] = useState<string | null>(null);
 
   const loadInvitations = async () => {
     try {
@@ -47,12 +48,19 @@ export function PendingInvitations() {
 
   const handleReject = async (invitationId: string) => {
     try {
+      setRejecting(invitationId);
       const { error } = await invitations.reject(invitationId);
-      if (error) throw error;
-      await loadInvitations();
+      if (error) {
+        console.error("Erreur refus détails:", error);
+        throw error;
+      }
+      setInvites((prev) => prev.filter((inv) => inv.id !== invitationId));
+      alert("Invitation refusée ✓");
     } catch (err) {
       console.error("Erreur refus:", err);
       alert("Erreur lors du refus de l'invitation");
+    } finally {
+      setRejecting(null);
     }
   };
 
@@ -98,10 +106,11 @@ export function PendingInvitations() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleReject(invite.id)}
+                    disabled={rejecting === invite.id}
                     className="gap-2"
                   >
                     <X className="h-4 w-4" />
-                    Refuser
+                    {rejecting === invite.id ? "Refusal..." : "Refuser"}
                   </Button>
                 </div>
               </div>

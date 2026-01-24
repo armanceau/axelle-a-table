@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-pink-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-orange-50 to-pink-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center text-green-600">
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-pink-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-orange-50 to-pink-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">

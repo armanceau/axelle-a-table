@@ -78,10 +78,9 @@ export const invitations = {
       }
 
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        "add_user_to_group",
+        "accept_group_invitation",
         {
-          group_id: invitation.group_id,
-          user_id: user.id,
+          invitation_id: invitationId,
         },
       );
 
@@ -111,14 +110,41 @@ export const invitations = {
   },
 
   async reject(invitationId: string) {
-    const { data, error } = await supabase
-      .from("group_invitations")
-      .update({ status: "rejected" })
-      .eq("id", invitationId)
-      .select()
-      .single();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Non authentifié");
 
-    return { data, error };
+    try {
+      // Vérifier que l'invitation existe et appartient à l'utilisateur
+      const { data: invitation, error: invError } = await supabase
+        .from("group_invitations")
+        .select("invited_email, status")
+        .eq("id", invitationId)
+        .single();
+
+      if (invError || !invitation) {
+        throw invError || new Error("Invitation non trouvée");
+      }
+
+      if (
+        invitation.invited_email?.toLowerCase() !== user.email?.toLowerCase()
+      ) {
+        throw new Error("Cette invitation ne vous appartient pas");
+      }
+
+      const { error } = await supabase
+        .from("group_invitations")
+        .update({ status: "rejected" })
+        .eq("id", invitationId);
+
+      if (error) throw error;
+      return { error: null };
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err : new Error(String(err)),
+      };
+    }
   },
 
   async delete(invitationId: string) {
