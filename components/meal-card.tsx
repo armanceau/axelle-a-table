@@ -84,7 +84,7 @@ export function MealCard({ mealType, recipe, onUpdate }: MealCardProps) {
         ) : (
           <DialogTrigger asChild>
             <button
-              className="w-full min-h-[60px] border-2 border-dashed border-border rounded-lg flex items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all cursor-pointer"
+              className="w-full min-h-15 border-2 border-dashed border-border rounded-lg flex items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all cursor-pointer"
               onClick={() => setInputValue("")}
             >
               <Plus className="h-4 w-4" />
