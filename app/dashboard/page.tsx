@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useGroups } from "@/hooks/useGroups";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { WeekCalendar } from "@/components/week-calendar";
 import { InviteMemberDialog } from "@/components/invite-member-dialog";
 import { PendingInvitations } from "@/components/pending-invitations";
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
   const { groups, loading: groupsLoading, createGroup } = useGroups();
+  const { appleRemindersLink } = useUserProfile();
   const [mounted, setMounted] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
@@ -44,6 +46,14 @@ export default function DashboardPage() {
     const name = prompt("Nom du groupe (famille, colocation...):");
     if (name) {
       await createGroup(name);
+    }
+  };
+
+  const handleRedirectionRemindersApple = () => {
+    if (appleRemindersLink) {
+      window.location.href = appleRemindersLink;
+    } else {
+      alert("Lien Apple Reminders non configuré");
     }
   };
 
@@ -138,6 +148,15 @@ export default function DashboardPage() {
                   groupId={selectedGroupId}
                   onInvite={handleInviteMember}
                 />
+              )}
+              {appleRemindersLink && (
+                <Button
+                  variant="outline"
+                  onClick={handleRedirectionRemindersApple}
+                  className="whitespace-nowrap"
+                >
+                  → Liste de course
+                </Button>
               )}
             </div>
 

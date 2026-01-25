@@ -110,6 +110,7 @@ export type Database = {
           id: string;
           display_name: string | null;
           avatar_url: string | null;
+          apple_reminders_link: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -117,6 +118,7 @@ export type Database = {
           id: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          apple_reminders_link?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -124,6 +126,7 @@ export type Database = {
           id?: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          apple_reminders_link?: string | null;
           created_at?: string;
           updated_at?: string;
         };
