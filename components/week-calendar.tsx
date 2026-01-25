@@ -65,6 +65,9 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
     weekStart,
   );
 
+  const isInitialLoading = (!mounted || loading) && meals.length === 0;
+  const isRefreshing = loading && meals.length > 0;
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -144,7 +147,7 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
     return count + (meals.midi ? 1 : 0) + (meals.soir ? 1 : 0);
   }, 0);
 
-  if (!mounted || loading) {
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">
@@ -168,7 +171,12 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
                 Planifiez vos repas du midi et du soir
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {isRefreshing && (
+                <span className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full animate-pulse">
+                  Mise à jour...
+                </span>
+              )}
               <span className="text-sm text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
                 {totalMeals}/14 repas planifiés
               </span>
