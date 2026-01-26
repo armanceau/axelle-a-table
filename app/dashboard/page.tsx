@@ -125,7 +125,7 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <>
-            <div className="mb-8 flex gap-2 overflow-x-auto pb-2 items-center">
+            <div className="mb-8 flex gap-2 overflow-x-auto pb-2 items-center flex-wrap">
               {groups.map((group) => (
                 <Button
                   key={group.id}

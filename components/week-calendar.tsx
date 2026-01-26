@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { DayColumn } from "./day-column";
 import { Button } from "@/components/ui/button";
-import {ChevronLeft, ChevronRight, RotateCcw} from "lucide-react";
+import {ChevronLeft, ChevronRight, RefreshCw, RotateCcw} from "lucide-react";
 import { useMeals } from "@/hooks/useMeals";
-import {UsersBadge} from "@/components/users-badge";
+import { UsersBadge } from "@/components/users-badge";
 
 const DAYS = [
   { name: "Lundi", short: "Lun" },
@@ -61,7 +61,9 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
   const weekStart = useMemo(() => weekDates[0], [weekDates]);
   const todayIndex = weekOffset === 0 ? getTodayIndex() : -1;
 
-  const { meals, loading, createMeal, updateMeal, deleteMeal } = useMeals(
+  const [countdown, setCountdown] = useState(300);
+
+  const { meals, loading, createMeal, updateMeal, deleteMeal, refetch } = useMeals(
     groupId,
     weekStart,
   );
@@ -71,6 +73,20 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          handleRefetch();
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const mealsByDay = DAYS.reduce(
@@ -99,6 +115,10 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
       }
     >,
   );
+
+  const handleRefetch = async () => {
+    await refetch();
+  };
 
   const handleUpdateMeal = async (
     dayName: string,
@@ -173,19 +193,18 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <UsersBadge/>
+              <UsersBadge />
               <div className="flex items-center gap-3">
                 {isRefreshing && (
-                    <span className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full animate-pulse">
-                  Mise à jour...
-                </span>
+                  <span className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full animate-pulse">
+                    Mise à jour...
+                  </span>
                 )}
                 <span className="text-sm text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
-                {totalMeals}/14 repas planifiés
-              </span>
+                  {totalMeals}/14 repas planifiés
+                </span>
               </div>
             </div>
-
           </div>
         </header>
 
@@ -235,20 +254,34 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
           </div>
         </div>
 
-        {/* Reset button */}
-        {totalMeals > 0 && (
-          <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefetch}
+              disabled={loading}
+            >
+              <RefreshCw className="h-4 w-4"/>
+               Synchroniser
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {Math.floor(countdown / 60)}:
+              {(countdown % 60).toString().padStart(2, "0")}
+            </span>
+          </div>
+          {totalMeals > 0 && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleReset}
               className="text-muted-foreground hover:text-destructive"
             >
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4" />
               Réinitialiser la semaine
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Calendar Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
