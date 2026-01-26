@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { DayColumn } from "./day-column";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import {ChevronLeft, ChevronRight, RotateCcw} from "lucide-react";
 import { useMeals } from "@/hooks/useMeals";
+import {UsersBadge} from "@/components/users-badge";
 
 const DAYS = [
   { name: "Lundi", short: "Lun" },
@@ -172,15 +173,19 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {isRefreshing && (
-                <span className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full animate-pulse">
+              <UsersBadge/>
+              <div className="flex items-center gap-3">
+                {isRefreshing && (
+                    <span className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full animate-pulse">
                   Mise à jour...
                 </span>
-              )}
-              <span className="text-sm text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
+                )}
+                <span className="text-sm text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
                 {totalMeals}/14 repas planifiés
               </span>
+              </div>
             </div>
+
           </div>
         </header>
 
