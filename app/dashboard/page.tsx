@@ -6,6 +6,7 @@ import {useAuth} from "@/hooks/useAuth";
 import {useGroups} from "@/hooks/useGroups";
 import {useUserProfile} from "@/hooks/useUserProfile";
 import {WeekCalendar} from "@/components/week-calendar";
+import {RecipesPanel} from "@/components/recipes-panel";
 import {InviteMemberDialog} from "@/components/invite-member-dialog";
 import {PendingInvitations} from "@/components/pending-invitations";
 import {Button} from "@/components/ui/button";
@@ -20,6 +21,9 @@ export default function DashboardPage() {
     const {appleRemindersLink} = useUserProfile();
     const [mounted, setMounted] = useState(false);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"planning" | "recipes">(
+        "planning",
+    );
 
     useEffect(() => {
         setMounted(true);
@@ -36,6 +40,12 @@ export default function DashboardPage() {
             setSelectedGroupId(groups[0].id);
         }
     }, [groups, selectedGroupId]);
+
+    useEffect(() => {
+        if (!selectedGroupId) {
+            setActiveTab("planning");
+        }
+    }, [selectedGroupId]);
 
     const handleSignOut = async () => {
         await signOut();
@@ -167,8 +177,33 @@ export default function DashboardPage() {
                             )}
                         </div>
 
-                        {/* Calendar */}
-                        {selectedGroupId && <WeekCalendar groupId={selectedGroupId}/>}
+                        {/* Tabs */}
+                        {selectedGroupId && (
+                            <div className="flex gap-2 mt-6 flex-wrap">
+                                <Button
+                                    variant={activeTab === "planning" ? "default" : "outline"}
+                                    onClick={() => setActiveTab("planning")}
+                                    size="sm"
+                                >
+                                    Planning
+                                </Button>
+                                <Button
+                                    variant={activeTab === "recipes" ? "default" : "outline"}
+                                    onClick={() => setActiveTab("recipes")}
+                                    size="sm"
+                                >
+                                    Recettes
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Content */}
+                        {selectedGroupId && activeTab === "planning" && (
+                            <WeekCalendar groupId={selectedGroupId}/>
+                        )}
+                        {selectedGroupId && activeTab === "recipes" && (
+                            <RecipesPanel groupId={selectedGroupId}/>
+                        )}
                     </>
                 )}
             </div>
