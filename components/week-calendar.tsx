@@ -3,9 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { DayColumn } from "./day-column";
 import { Button } from "@/components/ui/button";
-import {ChevronLeft, ChevronRight, RefreshCw, RotateCcw} from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  RotateCcw,
+  Wand2,
+} from "lucide-react";
 import { useMeals } from "@/hooks/useMeals";
 import { UsersBadge } from "@/components/users-badge";
+import { useRecipes } from "@/hooks/useRecipes";
 
 const DAYS = [
   { name: "Lundi", short: "Lun" },
@@ -63,10 +70,9 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
 
   const [countdown, setCountdown] = useState(300);
 
-  const { meals, loading, createMeal, updateMeal, deleteMeal, refetch } = useMeals(
-    groupId,
-    weekStart,
-  );
+  const { meals, loading, createMeal, updateMeal, deleteMeal, refetch } =
+    useMeals(groupId, weekStart);
+  const { recipes } = useRecipes(groupId);
 
   const isInitialLoading = (!mounted || loading) && meals.length === 0;
   const isRefreshing = loading && meals.length > 0;
@@ -123,7 +129,11 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
   const handleUpdateMeal = async (
     dayName: string,
     mealType: "midi" | "soir",
-    recipe: string | null,
+    recipe: {
+      title: string;
+      description?: string | null;
+      external_url?: string | null;
+    } | null,
   ) => {
     const dayIndex = DAYS.findIndex((d) => d.name === dayName);
     const date = new Date(weekDates[dayIndex]);
@@ -139,11 +149,15 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
     } else {
       const mealId = mealsByDay[dayName].mealIds[mealType];
       if (mealId) {
-        await updateMeal(mealId, { title: recipe });
+        await updateMeal(mealId, {
+          title: recipe.title,
+          description: recipe.description ?? null,
+        });
       } else {
         await createMeal({
           group_id: groupId,
-          title: recipe,
+          title: recipe.title,
+          description: recipe.description ?? null,
           meal_type: mealTypeMap[mealType],
           date: dateStr,
         });
@@ -164,8 +178,79 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
     }
   };
 
+  const getUniqueRecipeTitles = () => {
+    const titles = recipes
+      .map((recipe) => recipe.title?.trim())
+      .filter((title): title is string => Boolean(title));
+    return Array.from(new Set(titles));
+  };
+
+  const shuffle = (items: string[]) => {
+    const array = [...items];
+    for (let i = array.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
+  const handleAutoFill = async () => {
+    const recipeTitles = getUniqueRecipeTitles();
+    if (recipeTitles.length === 0) return;
+
+    const usedTitles = new Set(
+      meals
+        .map((meal) => meal.title?.trim())
+        .filter((title): title is string => Boolean(title)),
+    );
+
+    const emptySlots: Array<{
+      dayName: string;
+      mealType: "midi" | "soir";
+      dateStr: string;
+    }> = [];
+
+    DAYS.forEach((day, dayIndex) => {
+      const date = new Date(weekDates[dayIndex]);
+      const dateStr = date.toISOString().split("T")[0];
+      if (!mealsByDay[day.name]?.midi) {
+        emptySlots.push({ dayName: day.name, mealType: "midi", dateStr });
+      }
+      if (!mealsByDay[day.name]?.soir) {
+        emptySlots.push({ dayName: day.name, mealType: "soir", dateStr });
+      }
+    });
+
+    if (emptySlots.length === 0) return;
+
+    const availableRecipes = shuffle(
+      recipeTitles.filter((title) => !usedTitles.has(title)),
+    );
+
+    const mealTypeMap = { midi: "lunch", soir: "dinner" } as const;
+
+    let recipeIndex = 0;
+    for (const slot of emptySlots) {
+      if (recipeIndex >= availableRecipes.length) break;
+      const title = availableRecipes[recipeIndex];
+      usedTitles.add(title);
+      recipeIndex += 1;
+
+      await createMeal({
+        group_id: groupId,
+        title,
+        meal_type: mealTypeMap[slot.mealType],
+        date: slot.dateStr,
+      });
+    }
+  };
+
   const totalMeals = Object.values(mealsByDay).reduce((count, meals) => {
     return count + (meals.midi ? 1 : 0) + (meals.soir ? 1 : 0);
+  }, 0);
+
+  const emptySlotsCount = Object.values(mealsByDay).reduce((count, meals) => {
+    return count + (meals.midi ? 0 : 1) + (meals.soir ? 0 : 1);
   }, 0);
 
   if (isInitialLoading) {
@@ -262,25 +347,38 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
               onClick={handleRefetch}
               disabled={loading}
             >
-              <RefreshCw className="h-4 w-4"/>
-               Synchroniser
+              <RefreshCw className="h-4 w-4" />
+              Synchroniser
             </Button>
             <span className="text-sm text-muted-foreground">
               {Math.floor(countdown / 60)}:
               {(countdown % 60).toString().padStart(2, "0")}
             </span>
           </div>
-          {totalMeals > 0 && (
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={handleReset}
-              className="text-destructive hover:bg-destructive"
+              onClick={handleAutoFill}
+              disabled={
+                loading || recipes.length === 0 || emptySlotsCount === 0
+              }
             >
-              <RotateCcw className="h-4 w-4" />
-              Réinitialiser la semaine
+              <Wand2 className="h-4 w-4" />
+              Auto-remplir
             </Button>
-          )}
+            {totalMeals > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="text-destructive hover:bg-destructive"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Réinitialiser la semaine
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Calendar Grid */}
@@ -291,6 +389,7 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
               day={day.name}
               shortDay={day.short}
               meals={mealsByDay[day.name] || { midi: null, soir: null }}
+              recipes={recipes}
               onUpdateMeal={(mealType, recipe) =>
                 handleUpdateMeal(day.name, mealType, recipe)
               }

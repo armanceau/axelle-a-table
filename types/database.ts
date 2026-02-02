@@ -105,6 +105,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      recipes: {
+        Row: {
+          id: string;
+          group_id: string;
+          title: string;
+          description: string | null;
+          external_url: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          title: string;
+          description?: string | null;
+          external_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          title?: string;
+          description?: string | null;
+          external_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
