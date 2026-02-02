@@ -113,7 +113,7 @@ export function MealCard({ mealType, recipe, onUpdate }: MealCardProps) {
             {recipe && (
               <Button
                 variant="ghost"
-                className="text-destructive"
+                className="text-destructive hover:bg-destructive"
                 onClick={handleRemove}
               >
                 Supprimer

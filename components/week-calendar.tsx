@@ -180,7 +180,7 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
 
   return (
     <div className="bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -275,7 +275,7 @@ export function WeekCalendar({ groupId }: WeekCalendarProps) {
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-destructive hover:bg-destructive"
             >
               <RotateCcw className="h-4 w-4" />
               Réinitialiser la semaine
