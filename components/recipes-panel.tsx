@@ -89,29 +89,33 @@ export function RecipesPanel({ groupId }: RecipesPanelProps) {
             <CardTitle>Liste de recettes</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col gap-2">
               <Input
                 placeholder="Ajouter une recette..."
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               />
-              <Button onClick={handleAdd} disabled={!newTitle.trim()}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Textarea
+                  placeholder="Description (optionnel)"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
+                <Input
+                  placeholder="Lien externe (optionnel)"
+                  value={newExternalUrl}
+                  onChange={(e) => setNewExternalUrl(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={handleAdd}
+                disabled={!newTitle.trim()}
+                className="w-full sm:w-auto"
+              >
                 <Plus className="h-4 w-4" />
                 Ajouter
               </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Textarea
-                placeholder="Description (optionnel)"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-              />
-              <Input
-                placeholder="Lien externe (optionnel)"
-                value={newExternalUrl}
-                onChange={(e) => setNewExternalUrl(e.target.value)}
-              />
             </div>
             <div className="text-sm text-muted-foreground">
               {totalRecipes} recette{totalRecipes > 1 ? "s" : ""} enregistrée
@@ -136,10 +140,10 @@ export function RecipesPanel({ groupId }: RecipesPanelProps) {
                 {sortedRecipes.map((recipe) => (
                   <li
                     key={recipe.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                    className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-lg border border-border px-3 py-2"
                   >
                     {editingId === recipe.id ? (
-                      <div className="flex flex-1 flex-col gap-2">
+                      <div className="flex flex-1 flex-col gap-2 w-full">
                         <Input
                           value={editingTitle}
                           onChange={(e) => setEditingTitle(e.target.value)}
@@ -180,12 +184,12 @@ export function RecipesPanel({ groupId }: RecipesPanelProps) {
                       </div>
                     ) : (
                       <>
-                        <div className="flex flex-1 flex-col gap-1">
-                          <span className="text-sm font-medium text-foreground">
+                        <div className="flex flex-1 flex-col gap-1 min-w-0">
+                          <span className="text-sm font-medium text-foreground wrap-break-word">
                             {recipe.title}
                           </span>
                           {recipe.description && (
-                            <span className="text-xs text-muted-foreground whitespace-pre-wrap">
+                            <span className="text-xs text-muted-foreground whitespace-pre-wrap wrap-break-word">
                               {recipe.description}
                             </span>
                           )}
@@ -194,13 +198,13 @@ export function RecipesPanel({ groupId }: RecipesPanelProps) {
                               href={recipe.external_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-xs text-primary hover:underline"
+                              className="text-xs text-primary hover:underline break-all"
                             >
                               {recipe.external_url}
                             </a>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
